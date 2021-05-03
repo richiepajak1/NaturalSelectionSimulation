@@ -17,7 +17,8 @@ SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 1000
 
 
-def find_home():
+def find_home():  # This function randomly selects a location on the edge of the environment to place a creature and
+    # have that spot designated as the creatures home location
     home = (0, 0)
     side = random.randint(0, 3)
     if side == 0:
@@ -32,13 +33,14 @@ def find_home():
     return home
 
 
-def create_child(stats):
+def create_child(stats):  # This function creates a new creature and adds it to the creatures and all_sprites groups
     new_creature = Creature(stats)
     creatures.add(new_creature)
     all_sprites.add(new_creature)
 
 
-def randomize_stats(a):
+def randomize_stats(a):  # This function randomly selects a number 1 smaller, 1 larger, or the same as the number
+    # passed in
     b = random.randint(-1, 1)
     return a + b
 
@@ -64,26 +66,29 @@ class Creature(pygame.sprite.Sprite):
         self.rounds_to_live = 5
         self.destination = 0
 
-    def eat_creature(self):
+    def eat_creature(self):  # This functions simply adds 5 to a creatures current food count. This happens when a
+        # creature eats another creature
         self.num_food_eaten = self.num_food_eaten + 5
 
-    def end_of_round(self):
+    def end_of_round(self):  # This function takes care of several things that need to happen to each creature at the
+        # end of each round
         self.rounds_to_live -= 1
         self.energy = self.max_energy
         if self.num_food_eaten > 6:
             create_child(self.my_stats)
         self.num_food_eaten = 0
 
-    def is_at_home(self):
+    def is_at_home(self):  # This is a getter function for the variable at_home
         if self.at_home is True:
             return True
         else:
             return False
 
-    def eat_food(self):
+    def eat_food(self):  # This function adds 1 to the number of food a creature is eaten
         self.num_food_eaten = self.num_food_eaten + 1
 
-    def find_closest_food(self, foods):
+    def find_closest_food(self, foods):  # This function returns the food object that is currently the closest to
+        # that creature
         current_smallest = 10000000
         close_food = None
         for food in foods:
@@ -99,7 +104,8 @@ class Creature(pygame.sprite.Sprite):
                     self.rect.centery = close_food.rect.centery
         return close_food
 
-    def get_direction(self, x, y):
+    def get_direction(self, x, y):  # This function returns the direction that a creature should move based on the
+        # coordinates of its destination that are passed in
         direction_x = 0
         direction_y = 0
         if self.rect.centerx < x:
@@ -114,7 +120,8 @@ class Creature(pygame.sprite.Sprite):
         direction = (direction_x, direction_y)
         return direction
 
-    def update(self, foods):
+    def update(self, foods):  # This is the main function that is called each time a creature needs to move. It
+        # handles everything that should happen
         if self.destination == 0:
             closest_food = self.find_closest_food(foods)
 
@@ -141,8 +148,6 @@ class Creature(pygame.sprite.Sprite):
         if self.energy <= 0:
             self.destination = 1
 
-        # print("Speed: {}\nSize: {}\nEnergy: {}".format(self.speed, self.size, self.energy))
-
 
 class Food(pygame.sprite.Sprite):
     def __init__(self):
@@ -155,20 +160,23 @@ class Food(pygame.sprite.Sprite):
             random.randint(0, SCREEN_HEIGHT),
         )
 
-simulation_stats = {
-        "num_foods": 200,
-        "num_creatures": 4,
-        "creature_energy": 50000,
-        "base_speed": 3,
-        "base_size": 3
-    }
 
-def show_entry_fields():
+simulation_stats = {
+    "num_foods": 200,
+    "num_creatures": 4,
+    "creature_energy": 50000,
+    "base_speed": 3,
+    "base_size": 3
+}
+
+
+def apply():
     simulation_stats[0] = int(e1.get())
     simulation_stats[1] = int(e2.get())
     simulation_stats[2] = int(e3.get())
     simulation_stats[3] = int(e4.get())
     simulation_stats[4] = int(e5.get())
+
 
 master = tk.Tk()
 tk.Label(master, text="Number of Food Objects").grid(row=0)
@@ -200,18 +208,16 @@ tk.Button(master,
                                     column=0,
                                     sticky=tk.W,
                                     pady=4)
-tk.Button(master, text='Apply', command=show_entry_fields).grid(row=6,
-                                                               column=1,
-                                                               sticky=tk.W,
-                                                               pady=4)
+tk.Button(master, text='Apply', command=apply).grid(row=6,
+                                                    column=1,
+                                                    sticky=tk.W,
+                                                    pady=4)
 
 master.mainloop()
 
 tk.mainloop()
 
-
-
-# stats
+# Stats
 environment_stats = {
     "num_foods": simulation_stats[0],
     "num_creatures": simulation_stats[1]
@@ -223,34 +229,35 @@ creature_stats = {
     "creature_energy": simulation_stats[2]
 }
 
+# Start of pygame
 pygame.init()
-
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-
-generation_count = 1
-
-left_foods = 0
-
 font = pygame.font.SysFont(None, 24)
+clock = pygame.time.Clock()
+
 
 # create groups
 foods = pygame.sprite.Group()
 creatures = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
 
-clock = pygame.time.Clock()
-phase = 0
-all_creatures_at_home = True
-some_creatures_have_energy = True
-
+# CSV file opening
 filename = "selectiondata.csv"
 f = open(filename, "w+")
 f.close()
 
 with open('selectiondata.csv', 'a', newline='') as csvfile:
     mywriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
-    mywriter.writerow(('Generation Number', 'Number of Creatures', 'Average Speed', 'Average Size', 'Number of Food Objects Remaining'))
+    mywriter.writerow(('Generation Number', 'Number of Creatures', 'Average Speed', 'Average Size',
+                       'Number of Food Objects Remaining'))
 
+# Initialization of necessary variables
+generation_count = 1
+left_foods = 0
+phase = 0
+all_creatures_at_home = True
+some_creatures_have_energy = True
+running = True
 
 # create original creatures
 j = 0
@@ -258,15 +265,15 @@ while j < environment_stats["num_creatures"]:
     create_child(creature_stats)
     j += 1
 
-running = True
-
 while running:
-
     for event in pygame.event.get():
         if event.type == KEYDOWN:
             if event.key == K_ESCAPE:
                 running = False
-                print("hello")
+                filepath = os.path.dirname(os.path.abspath(__file__))
+
+                read_file = pd.read_csv(filepath + '\selectiondata.csv')
+                read_file.to_excel(filepath + '\selectiondata.xlsx', index=None, header=True)
         elif event.type == QUIT:
             running = False
             filepath = os.path.dirname(os.path.abspath(__file__))
@@ -357,4 +364,3 @@ while running:
     clock.tick(60)
 
     pygame.display.flip()
-
