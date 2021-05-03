@@ -1,3 +1,5 @@
+import os.path
+
 import pygame
 import random
 import math
@@ -49,13 +51,10 @@ class Creature(pygame.sprite.Sprite):
         super(Creature, self).__init__()
         self.speed = self.my_stats["base_speed"]
         self.size = self.my_stats["base_size"]
-        self.max_energy = 750000
+        self.max_energy = self.my_stats["creature_energy"]
         self.energy = self.max_energy
         self.surf = pygame.Surface((self.size * 4, self.size * 4))
-        if self.speed <= 255:
-            self.surf.fill((random.randint(0, 200), random.randint(0, 200), self.speed))
-        else:
-            self.surf.fill((random.randint(0, 200), random.randint(0, 200), 255))
+        self.surf.fill((random.randint(0, 200), random.randint(0, 200), random.randint(0, 200)))
         self.rect = self.surf.get_rect()
 
         self.num_food_eaten = 0
@@ -136,7 +135,9 @@ class Creature(pygame.sprite.Sprite):
             self.at_home = False
 
         self.rect.move_ip(direction)
-        self.energy -= (self.speed ** 2) * (self.size ** 3) + 1
+        if self.speed < 1:
+            self.energy = 1
+        self.energy -= (self.speed ** 2) + (self.size ** 3)
         if self.energy <= 0:
             self.destination = 1
 
@@ -157,7 +158,7 @@ class Food(pygame.sprite.Sprite):
 simulation_stats = {
         "num_foods": 200,
         "num_creatures": 4,
-        "creature_energy": 750000,
+        "creature_energy": 50000,
         "base_speed": 3,
         "base_size": 3
     }
@@ -183,7 +184,7 @@ e4 = tk.Entry(master)
 e5 = tk.Entry(master)
 e1.insert(10, '200')
 e2.insert(10, '4')
-e3.insert(10, '750000')
+e3.insert(10, '50000')
 e4.insert(10, '3')
 e5.insert(10, '3')
 
@@ -268,8 +269,10 @@ while running:
                 print("hello")
         elif event.type == QUIT:
             running = False
-            read_file = pd.read_csv(r'C:\Users\Richie\PycharmProjects\JuniorIS\selectiondata.csv')
-            read_file.to_excel(r'C:\Users\Richie\PycharmProjects\JuniorIS\selectiondata.xlsx', index=None, header=True)
+            filepath = os.path.dirname(os.path.abspath(__file__))
+
+            read_file = pd.read_csv(filepath + '\selectiondata.csv')
+            read_file.to_excel(filepath + '\selectiondata.xlsx', index=None, header=True)
 
     screen.fill((255, 255, 255))
 
@@ -351,7 +354,7 @@ while running:
 
     img = font.render(str(generation_count), True, (0, 0, 0))
     screen.blit(img, (20, 20))
-    clock.tick(120)
+    clock.tick(60)
 
     pygame.display.flip()
 
